@@ -31,11 +31,11 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import com.workin.main.AppMain;
+import com.workin.member.MemberMain;
 
 //패널을 클릭했을 때 보여짐
 public class ScheduleForm extends JDialog{
-	
-
+	MemberMain memberMain;
 	Integer time[]= {0,1,2,3,4,5,6,7,8,9,10,11,12};
 	String[] rbb = {"AM","PM"};
 	
@@ -69,12 +69,11 @@ public class ScheduleForm extends JDialog{
 	
 	ArrayList<String> array = new ArrayList<String>();
 	CalendarMain calendarmain;
-	
+	DateBox db;
 	
 	String choose= null;
 	int year=0;
 	int month=0;
-	boolean have;
 
 	class MyItemListener implements ItemListener{
 		public void itemStateChanged(ItemEvent e) {
@@ -104,6 +103,7 @@ public class ScheduleForm extends JDialog{
 			JOptionPane.showMessageDialog(this, e);
 		}
 
+		calendarmain = new CalendarMain(appMain);
 		
 		//생성
 		p_sum = new JPanel();
@@ -180,9 +180,9 @@ public class ScheduleForm extends JDialog{
 		setSize(520,540);
 		setLocationRelativeTo(frame);
 		
-		System.out.println("가져온값"+day);
+		//System.out.println("가져온값"+day);
 		choose = day;
-		System.out.println("choose값"+choose);
+		//System.out.println("choose값"+choose);
 		this.year = year;
 		this.month = month;
 	}
@@ -207,17 +207,20 @@ public class ScheduleForm extends JDialog{
 	//db에서 콤보박스 값 가져오기
 	public void combolist() {
 		String sql = "select  cal_name from calendar_category";
+		PreparedStatement pstmt =null;
+		ResultSet rs =null;
 		try {
-			PreparedStatement pstmt = con.prepareStatement(sql);
-			ResultSet rs = pstmt.executeQuery();
-			
+			pstmt = con.prepareStatement(sql);
+			rs = pstmt.executeQuery();
 			while(rs.next()) {
 				String dd = rs.getString("cal_name");
 				com_sch.addItem(dd);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
-		}		
+		}finally {
+			release(pstmt, rs);
+		}
 	}
 	
 	
@@ -233,7 +236,7 @@ public class ScheduleForm extends JDialog{
 	
 	//일정등록
 	public void regist(AppMain appMain) {		
-		System.out.println("마지막"+this.choose);
+		//System.out.println("마지막"+this.choose);
 		int id = appMain.getMember().getMember_id(); //member_id
 		int r = com_sch.getSelectedIndex(); //cal_category
 		String m_title = title.getText(); //cal_title
@@ -244,16 +247,14 @@ public class ScheduleForm extends JDialog{
 		int month = this.month;
 		int date = Integer.parseInt(this.choose); //선택한 date값
 		//System.out.println("선택한 날짜의 입력폼"+year+(month+1)+date);
-		boolean have = this.have;
-		System.out.println("저장된값 여부 알아보기"+have);
 		
-		System.out.println("이름은 "+name+"아이디는 "+id +"선택된 값의 인덱스는" +r+"title:"+m_title+"content: "+m_content+"t : "+t);
-		String sql = "insert into calendar(member_id, cal_category, cal_title, cal_content, cal_writer,cal_date, cal_time,year,month,date,have)";
-		sql+=" values("+id+","+(r+1)+",?,?,?,?,?,?,?,?,?)";
+		//System.out.println("이름은 "+name+"아이디는 "+id +"선택된 값의 인덱스는" +r+"title:"+m_title+"content: "+m_content+"t : "+t);
+		String sql = "insert into calendar(member_id, cal_category, cal_title, cal_content, cal_writer,cal_date, cal_time,year,month,date)";
+		sql+=" values("+id+","+(r+1)+",?,?,?,?,?,?,?,?)";
 		
 		PreparedStatement pstmt = null;
 		
-		System.out.println(sql);
+		//System.out.println(sql);
 		
 		try {
 			pstmt = con.prepareStatement(sql);
@@ -265,18 +266,18 @@ public class ScheduleForm extends JDialog{
 			pstmt.setInt(6, year);
 			pstmt.setInt(7, (month+1));
 			pstmt.setInt(8, date);	
-			pstmt.setBoolean(9, true);
 			int result = pstmt.executeUpdate();
 			
 			if(result==1) {
 				JOptionPane.showMessageDialog(this, "등록성공");
+
 			}else {
 				JOptionPane.showMessageDialog(this, "등록실패");
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}finally {
-			if(pstmt!=null) {
+			if(pstmt !=null) {
 				try {
 					pstmt.close();
 				} catch (SQLException e) {
@@ -285,9 +286,12 @@ public class ScheduleForm extends JDialog{
 			}
 		}
 		
+
+	
 		this.setVisible(false);
 		setClear();
-		have = true;
+		
+		
 	}
 	
 	//일정 입력할때 비어있으면 경고하기
@@ -301,5 +305,23 @@ public class ScheduleForm extends JDialog{
 			}else {
 				regist(appMain);
 			}			
+	}
+	
+	
+	public void release(PreparedStatement pstmt, ResultSet rs) {
+		if(rs !=null) {
+			try {
+				rs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		if(pstmt !=null) {
+			try {
+				pstmt.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

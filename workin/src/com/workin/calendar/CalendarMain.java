@@ -7,9 +7,11 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -21,10 +23,13 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+
 import com.workin.main.AppMain;
 import com.workin.main.Page;
+import com.workin.member.MemberMain;
 
 public class CalendarMain extends Page{
+	MemberMain memberMain;
 	JPanel pp;
 	JPanel p_hnorth;
 	JButton bt_today;
@@ -37,7 +42,7 @@ public class CalendarMain extends Page{
 	JButton bt_next_y;
 	
 	JPanel p_center; //날짜 박스 처리할 영역
-	String[] dayArray= {"SUN","MON","TUE","WED","TR","FRI","SAT"};
+	String[] dayArray= {"SUN","MON","TUE","WED","THU","FRI","SAT"};
 	//ScheduleForm form;
 	
 	//원하신 시점에 날짜 박스를 제어하기 위해서, 각 날짜 박스객체들을 배열에 담아놓자!!
@@ -45,19 +50,26 @@ public class CalendarMain extends Page{
 	Calendar currentDate; //다음달, 이전달로 이동할 때 사용
 	Calendar today = Calendar.getInstance();
 	
-	DateLabel dlabel;
 
 	int yy_t = today.get(Calendar.YEAR); //현재 연도 
 	int mm_t = today.get(Calendar.MONTH); //현재 월 
 	int dd_t = today.get(Calendar.DATE); //현재 일
 	
 	int calDates[] = new int[boxArray.length];
-
+	int category; //카테고리
+	String cate;
+	
+	String url="jdbc:mysql://localhost:3306/workinapp?useSSL=false&characterEncoding=UTF-8";
+	String user="root";
+	String password="1234";
+	Connection  con;
+	
 	
 	public CalendarMain(AppMain appMain) {
 		
 		super(appMain);
 		
+		conn();
 		//룩앤필이용해서 UI깔끔하게 
 		try{
 			UIManager.setLookAndFeel ("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");//LookAndFeel Windows 스타일 적용
@@ -110,7 +122,7 @@ public class CalendarMain extends Page{
 		createDay(); //요일생성
 		createDate(appMain);//날짜생성
 		printDate();//각 박스에 날짜 출력
-
+		registDate(appMain);
 		
 		
 		//이벤트 
@@ -122,6 +134,7 @@ public class CalendarMain extends Page{
 				removeString();//기존 날짜 지우기
 				setDateTitle(); //달력 제목 바꾸기 
 				printDate(); //날짜 출력하기	
+				registDate(appMain);
 			}
 		});
 		
@@ -133,6 +146,7 @@ public class CalendarMain extends Page{
 				removeString();//기존 날짜 지우기
 				setDateTitle(); //달력 제목 바꾸기 
 				printDate(); //날짜 출력하기	
+				registDate(appMain);
 			}
 		});
 		bt_prev_y.addActionListener(new ActionListener() {
@@ -143,6 +157,7 @@ public class CalendarMain extends Page{
 				removeString();//기존 날짜 지우기
 				setDateTitle(); //달력 제목 바꾸기 
 				printDate(); //날짜 출력하기	
+				registDate(appMain);
 			}
 		});
 		bt_next_y.addActionListener(new ActionListener() {
@@ -153,6 +168,7 @@ public class CalendarMain extends Page{
 				removeString();//기존 날짜 지우기
 				setDateTitle(); //달력 제목 바꾸기 
 				printDate(); //날짜 출력하기	
+				registDate(appMain);
 			}
 		});
 		bt_today.addActionListener(new ActionListener() {
@@ -163,11 +179,31 @@ public class CalendarMain extends Page{
 				removeString();//기존 날짜 지우기
 				setDateTitle(); //달력 제목 바꾸기 
 				printDate(); //날짜 출력하기	
+				registDate(appMain);
 			}
 		});
 					
-		System.out.println("캘린더에서 회원값"+appMain.getMember().getUser_name());
+		//System.out.println("캘린더에서 회원값"+appMain.getMember().getUser_name());
+		
 	}
+	
+	// DB연결
+		public void conn() {
+			try {
+				Class.forName("com.mysql.jdbc.Driver");//1) 드라이버 로드
+				con = DriverManager.getConnection(url,user,password);
+				if(con!=null) {
+					System.out.println("캘린더 DB 접속성공");
+				}else {
+					JOptionPane.showMessageDialog(this, "DB에 접속할 수 없습니다");
+				}
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}	
+		}
+		
 	
 	//현재날짜 구하기(프로그램 가동과 동시에 사용될 디폴트 날짜 객체) 
 	public Calendar getCurrentDate() {
@@ -213,25 +249,24 @@ public class CalendarMain extends Page{
 
 		for(int i=0;i<dayArray.length*6;i++) {
 			if(i<firstday|| i-(firstday-1)>getLastDate(yy, (mm+1))) { 
-				dateBox = new DateBox("", new Color(255,0,0,0), 130,79,Color.black,yy,mm,false); //일 수 외에는 투명하게 배경 처리하기
+				dateBox = new DateBox("", new Color(255,0,0,0), 130,79,Color.black,yy,mm,"","","",category,new Color(255,0,0,0)); //일 수 외에는 투명하게 배경 처리하기
 			}else if(yy==yy_t&&mm==mm_t&&i==dd_t+1) { //오늘 표시
-				dateBox = new DateBox("", Color.pink, 130,79,Color.black,yy,mm,false);
+				dateBox = new DateBox("", Color.pink, 130,79,Color.black,yy,mm,"","","",category,new Color(255,0,0,0));
 				dateBox.click(appMain);
 				
 			}else if(i==0 || i==7 || i==14 || i==21 || i==28){
-				dateBox = new DateBox("", Color.white, 130,79,Color.red,yy,mm,false);		
+				dateBox = new DateBox("", Color.white, 130,79,Color.red,yy,mm,"","","",category,new Color(255,0,0,0));		
 				dateBox.click(appMain);
 			}else if(i==6 || i==13 || i==20 || i==27){
-				dateBox = new DateBox("", Color.white, 130,79,Color.blue,yy,mm,false);
+				dateBox = new DateBox("", Color.white, 130,79,Color.blue,yy,mm,"","","",category,new Color(255,0,0,0));
 				dateBox.click(appMain);
 			}else {
-				dateBox = new DateBox("", Color.white, 130,79,Color.black,yy,mm,false);
+				dateBox = new DateBox("", Color.white, 130,79,Color.black,yy,mm,"","","",category,new Color(255,0,0,0));
 				dateBox.click(appMain);	
 			}
 			p_center.add(dateBox);
 			boxArray[i]=dateBox;
 		}
-		addLabel();
 
 	}
 	
@@ -322,7 +357,7 @@ public class CalendarMain extends Page{
 	public void nextYear() {
 		int yy = currentDate.get(Calendar.YEAR);
 		int mm = currentDate.get(Calendar.MONTH);
-		currentDate.set(yy+1, mm,1); //yy, mm, dd
+		currentDate.set(yy+1, mm,1); //yy, mm, d
 
 	}
 	
@@ -331,29 +366,110 @@ public class CalendarMain extends Page{
 		currentDate = new GregorianCalendar(yy_t,mm_t,dd_t);
 	}
 	
-	
-
-	//캘린더에 일정표시하기
-	public void addLabel() {
-		System.out.println("실행됨");
-		for(int i=0;i<boxArray.length;i++) {
-			dlabel = new DateLabel(130, 40, Color.pink, "12", "와우");
-			boxArray[i].add(dlabel);			
-		}
-	}
-
-	
-
 
 	//한자리 숫자에 0붙이기
 	public static String getZeroString(int n) {
 		return (n<10)? "0"+n:Integer.toString(n);
 	}
-
-
+	
+	//입력한 곳의 날짜 
+	public void registDate(AppMain appMain) {
+		
+		int member_id = appMain.getMember().getMember_id();
+		String slq = "select * from calendar where member_id="+member_id;
+		int yy = currentDate.get(Calendar.YEAR);
+		int mm = currentDate.get(Calendar.MONTH);
+		int dd = getFirstDayOfMonth(yy, mm);
+		String title; //제목
+		String cal_date; //am or pm
+		String cal_time; //시간
+		PreparedStatement pstmt=null;	
+		PreparedStatement pstmt2=null;	
+		ResultSet rs=null; 
+		ResultSet rs2=null; 
+		String date =null;
+		
+		try {
+			pstmt = con.prepareStatement(slq);
+			 rs = pstmt.executeQuery();
+			while(rs.next()) {
+				int year = rs.getInt("year");
+				int month = rs.getInt("month");
+				date = rs.getString("date");
+				title = rs.getString("cal_title");
+				category = rs.getInt("cal_category");
+				cal_date = rs.getString("cal_date");
+				cal_time = rs.getString("cal_time");
+				
+				String sql2 = "select cal_name from calendar_category where cal_category="+category;
+				pstmt2 = con.prepareStatement(sql2);
+				rs2 = pstmt2.executeQuery();
+				while(rs2.next()) {
+					cate = rs2.getString("cal_name");					
+				}
+				
+				//System.out.println(year+"년"+month+"월"+date+"일"+"에 값이 저장되어 있음");
+				//System.out.println(Integer.parseInt(date)+(dd-1)+"번째임");
+				if(year==yy && month ==(mm+1)) {
+					for(int i=0;i<boxArray.length;i++) {
+						if(category ==1) {
+							boxArray[Integer.parseInt(date)+(dd-1)].cc = new Color(136,133,164);
+							boxArray[Integer.parseInt(date)+(dd-1)].title=cate;
+							boxArray[Integer.parseInt(date)+(dd-1)].cal_date=cal_date;
+							boxArray[Integer.parseInt(date)+(dd-1)].cal_time=cal_time;
+							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+						}else if(category==2) {
+							boxArray[Integer.parseInt(date)+(dd-1)].cc = new Color(128,128,0);
+							boxArray[Integer.parseInt(date)+(dd-1)].title=cate;
+							boxArray[Integer.parseInt(date)+(dd-1)].cal_date=cal_date;
+							boxArray[Integer.parseInt(date)+(dd-1)].cal_time=cal_time;
+							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+						}else if(category==3) {
+							boxArray[Integer.parseInt(date)+(dd-1)].cc = new Color(255,127,0);
+							boxArray[Integer.parseInt(date)+(dd-1)].title=cate;
+							boxArray[Integer.parseInt(date)+(dd-1)].cal_date=cal_date;
+							boxArray[Integer.parseInt(date)+(dd-1)].cal_time=cal_time;
+							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+						}else if(category==4) {
+							boxArray[Integer.parseInt(date)+(dd-1)].cc = new Color(97,219,240);
+							boxArray[Integer.parseInt(date)+(dd-1)].title=cate;
+							boxArray[Integer.parseInt(date)+(dd-1)].cal_date=cal_date;
+							boxArray[Integer.parseInt(date)+(dd-1)].cal_time=cal_time;
+							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+						}else {
+							boxArray[Integer.parseInt(date)+(dd-1)].cc = new Color(255,0,0,0);
+						}
+						
+					}
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally {
+			release(pstmt2, rs2);
+			release(pstmt, rs);
+		}
+	}
 	
 	
-//	public static void main(String[] args) {
-//		new CalendarMain();
-//	}
+	public void release(PreparedStatement pstmt, ResultSet rs) {
+		if(rs !=null) {
+			try {
+				rs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		if(pstmt !=null) {
+			try {
+				pstmt.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }

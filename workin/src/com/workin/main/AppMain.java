@@ -3,6 +3,7 @@ package com.workin.main;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -14,11 +15,14 @@ import java.net.Socket;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+
 
 import com.workin.calendar.CalendarMain;
 import com.workin.chat.ChatClient;
@@ -26,12 +30,12 @@ import com.workin.chat.Member;
 import com.workin.chat.ServerMsgThread;
 import com.workin.cloud.CloudMain;
 import com.workin.list.ListMain;
+import com.workin.member.MemberMain;
 
 
 
 public class AppMain extends JFrame implements ActionListener{
 	AppMain appMain;
-	
 	//서쪽 영역
 	JPanel p_west;
 	JPanel p_profile;
@@ -58,12 +62,16 @@ public class AppMain extends JFrame implements ActionListener{
 	ServerSocket server;
 	Thread serverThread;
 	Thread chatThread;
+	private MemberMain memberMain;
 	private Vector<ServerMsgThread> clientList = new Vector<ServerMsgThread>();
 	boolean serverFlag = true;
 
-	public AppMain(Member member) {
+	public AppMain(Member member, MemberMain memberMain) {
 		System.out.println(member);
 		this.member=member;
+		System.out.println(memberMain);
+		this.memberMain = memberMain;
+		
 		//생성
 		p_west = new JPanel();
 		p_profile = new JPanel();
@@ -94,7 +102,7 @@ public class AppMain extends JFrame implements ActionListener{
 		p_center = new JPanel();
 		
 		pages[0] = new HomeMain(this); //메인홈
-		pages[1] = new ListMain(this);//게시판 리스트
+		pages[1] = new ListMain(this,memberMain);//게시판 리스트
 		pages[2] = new CalendarMain(this);//나의일정
 		pages[3] = new CloudMain(this);//클라우드
 		//pages[4] = new JoinForm(this);//회원가입
@@ -184,14 +192,18 @@ public class AppMain extends JFrame implements ActionListener{
 				}
 			});
 		
-		
+			addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent e) {
+					getMemberMain().disConnect(); //DB 접속해제
+					System.exit(0); //kill process
+				}
+			});
 		
 		
 		
 		//보여주기
 		setBounds(400, 100, 1200, 720);
 		setVisible(true);
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
 	}
 	
 	public void runServer() {
@@ -228,6 +240,10 @@ public class AppMain extends JFrame implements ActionListener{
 	
 	public Member getMember() {
 		return member;
+	}
+	
+	public MemberMain getMemberMain() {
+		return memberMain;
 	}
 
 	public Vector<ServerMsgThread> getClientList() {

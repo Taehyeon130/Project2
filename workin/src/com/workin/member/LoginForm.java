@@ -39,6 +39,7 @@ public class LoginForm extends PageControl{
 	
 	public LoginForm(MemberMain memberMain) {
 		super(memberMain);
+		this.memberMain = memberMain;
 		//생성
 		la_icon = new JLabel("로그인",SwingConstants.CENTER);
 		la_id = new JLabel("아이디",SwingConstants.LEFT);
@@ -105,7 +106,7 @@ public class LoginForm extends PageControl{
 				member.setImg(rs.getString("img"));
 				JOptionPane.showMessageDialog(this, member.getUser_name()+"님 환영합니다.");
 				//this.setVisible(false);
-				new AppMain(member);
+				new AppMain(member, memberMain);
 				this.getMemberMain().setVisible(false);
 			}else {
 				JOptionPane.showMessageDialog(this, "로그인 정보가 올바르지 않습니다.");				
