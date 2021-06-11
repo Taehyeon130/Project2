@@ -3,16 +3,13 @@ package com.workin.member;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -20,8 +17,9 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
-import com.workin.chat.Member;
 import com.workin.main.AppMain;
+import com.workin.main.HomeMain;
+import com.workin.model.domain.Member;
 
 public class LoginForm extends PageControl{
 	MemberMain memberMain;
@@ -40,6 +38,9 @@ public class LoginForm extends PageControl{
 	public LoginForm(MemberMain memberMain) {
 		super(memberMain);
 		this.memberMain = memberMain;
+	
+	
+		
 		//생성
 		la_icon = new JLabel("로그인",SwingConstants.CENTER);
 		la_id = new JLabel("아이디",SwingConstants.LEFT);

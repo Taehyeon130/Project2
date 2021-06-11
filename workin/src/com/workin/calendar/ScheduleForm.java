@@ -35,6 +35,7 @@ import com.workin.member.MemberMain;
 
 //패널을 클릭했을 때 보여짐
 public class ScheduleForm extends JDialog{
+	JPanel p;
 	MemberMain memberMain;
 	Integer time[]= {0,1,2,3,4,5,6,7,8,9,10,11,12};
 	String[] rbb = {"AM","PM"};
@@ -70,11 +71,12 @@ public class ScheduleForm extends JDialog{
 	ArrayList<String> array = new ArrayList<String>();
 	CalendarMain calendarmain;
 	DateBox db;
-	
+	AppMain appMain;
 	String choose= null;
 	int year=0;
 	int month=0;
-
+	int t ;
+	
 	class MyItemListener implements ItemListener{
 		public void itemStateChanged(ItemEvent e) {
 			 if (e.getStateChange() == ItemEvent.DESELECTED)
@@ -88,11 +90,11 @@ public class ScheduleForm extends JDialog{
 		}
 	}
 	
-	
-	
-	public ScheduleForm(JFrame frame,String top,AppMain appMain,String day,int year, int month) {
+	public ScheduleForm(JFrame frame,String top,AppMain appMain,String day,int year, int month, JPanel p,CalendarMain calendarmain) {
 		super(frame,top);
-
+		this.p=p;
+		this.calendarmain = calendarmain;
+		this.appMain = appMain;
 		conn();
 		
 		
@@ -103,7 +105,6 @@ public class ScheduleForm extends JDialog{
 			JOptionPane.showMessageDialog(this, e);
 		}
 
-		calendarmain = new CalendarMain(appMain);
 		
 		//생성
 		p_sum = new JPanel();
@@ -130,7 +131,7 @@ public class ScheduleForm extends JDialog{
 		com_sch.setPreferredSize(new Dimension(100,30));
 		com_time.setPreferredSize(new Dimension(100,30));
 		title.setPreferredSize(new Dimension(350,30));
-		la_title.setFont(new Font("Arial-Black", Font.BOLD, 22));
+		la_title.setFont(new Font("맑은 고딕", Font.BOLD, 20));
 		combolist();
 		
 		
@@ -165,7 +166,6 @@ public class ScheduleForm extends JDialog{
 		bt_regist.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				checkE(appMain);
-				
 			}
 		});
 		
@@ -236,26 +236,21 @@ public class ScheduleForm extends JDialog{
 	
 	//일정등록
 	public void regist(AppMain appMain) {		
-		//System.out.println("마지막"+this.choose);
 		int id = appMain.getMember().getMember_id(); //member_id
 		int r = com_sch.getSelectedIndex(); //cal_category
 		String m_title = title.getText(); //cal_title
 		String m_content =detail.getText(); //cal_content
 		String name = appMain.getMember().getUser_name(); //cal_writer
-		int t = com_time.getSelectedIndex();//cal_time
+		t = com_time.getSelectedIndex();//cal_time
 		int year = this.year;
 		int month = this.month;
 		int date = Integer.parseInt(this.choose); //선택한 date값
-		//System.out.println("선택한 날짜의 입력폼"+year+(month+1)+date);
-		
-		//System.out.println("이름은 "+name+"아이디는 "+id +"선택된 값의 인덱스는" +r+"title:"+m_title+"content: "+m_content+"t : "+t);
+	
 		String sql = "insert into calendar(member_id, cal_category, cal_title, cal_content, cal_writer,cal_date, cal_time,year,month,date)";
 		sql+=" values("+id+","+(r+1)+",?,?,?,?,?,?,?,?)";
 		
 		PreparedStatement pstmt = null;
-		
-		//System.out.println(sql);
-		
+				
 		try {
 			pstmt = con.prepareStatement(sql);
 			pstmt.setString(1, m_title);
@@ -270,10 +265,11 @@ public class ScheduleForm extends JDialog{
 			
 			if(result==1) {
 				JOptionPane.showMessageDialog(this, "등록성공");
-
+				
 			}else {
 				JOptionPane.showMessageDialog(this, "등록실패");
 			}
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}finally {
@@ -285,27 +281,25 @@ public class ScheduleForm extends JDialog{
 				}
 			}
 		}
-		
-
-	
 		this.setVisible(false);
-		setClear();
-		
-		
+		calendarmain.registDate(appMain); //일정 추가하기	
+		setClear();//입력폼 값 비워두기
 	}
 	
 	//일정 입력할때 비어있으면 경고하기
-	public void checkE(AppMain appMain) {
-			if(title.getText().equals("")) {
-				JOptionPane.showMessageDialog(this, "제목을 입력해주세요");
-			}else if(radio[0].isSelected()==false && radio[1].isSelected()==false){
-				JOptionPane.showMessageDialog(this, "시간을 선택해주세요");
-			}else if(detail.getText().equals("")) {
-				JOptionPane.showMessageDialog(this, "내용을 입력해주세요");
-			}else {
-				regist(appMain);
-			}			
+	public void checkE(AppMain appMain) {	
+		if(title.getText().equals("")) {
+			JOptionPane.showMessageDialog(this, "제목을 입력해주세요");
+		}else if(radio[0].isSelected()==false && radio[1].isSelected()==false){
+			JOptionPane.showMessageDialog(this, "시간을 선택해주세요");
+		}else if(detail.getText().equals("")) {
+			JOptionPane.showMessageDialog(this, "내용을 입력해주세요");
+		}else {
+			regist(appMain);
+		}				
 	}
+	
+
 	
 	
 	public void release(PreparedStatement pstmt, ResultSet rs) {

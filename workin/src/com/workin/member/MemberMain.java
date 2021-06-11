@@ -5,8 +5,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -21,9 +19,11 @@ import javax.swing.SwingConstants;
 
 import com.workin.main.AppMain;
 import com.workin.main.CustomButton;
+import com.workin.main.HomeMain;
 
 public class MemberMain extends JFrame implements ActionListener{
 	AppMain appMain;
+	
 	
 	JPanel p_back;
 	JPanel p_form;
@@ -38,12 +38,14 @@ public class MemberMain extends JFrame implements ActionListener{
 	
 	//db
 	private Connection con;
-	String url = "jdbc:mysql://localhost:3306/workinapp";
+	String url = "jdbc:mysql://localhost:3306/workinapp?characterEncoding=UTF-8";
 	String user = "root";
 	String password = "1234";
 	
+	
 	public MemberMain() {
 		connect();
+	
 		//생성
 		p_back = new JPanel();
 		p_form = new JPanel();

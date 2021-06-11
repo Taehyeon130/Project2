@@ -3,15 +3,18 @@ package com.workin.main;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
@@ -19,31 +22,35 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-
 import com.workin.calendar.CalendarMain;
 import com.workin.chat.ChatClient;
-import com.workin.chat.Member;
-import com.workin.chat.ServerMsgThread;
+import com.workin.chat.ChatSelect;
+import com.workin.chat.ChatServer;
+import com.workin.chat.ClientMsgThread;
+import com.workin.chat.HumanImg;
 import com.workin.cloud.CloudMain;
 import com.workin.list.ListMain;
 import com.workin.member.MemberMain;
+import com.workin.model.domain.Member;
+
 
 
 
 public class AppMain extends JFrame implements ActionListener{
-	AppMain appMain;
+
+	
 	//서쪽 영역
 	JPanel p_west;
 	JPanel p_profile;
 	JPanel p_img;
 	JLabel la_name;
 	JLabel la_dept;
+	HumanImg hu;
 	
-	String[] menu_title= {"홈","타임라인","나의일정","클라우드","설정"};
+	String[] menu_title= {"홈","타임라인","나의일정","클라우드"};
 	CustomButton[] bt_menu=new CustomButton[menu_title.length]; //배열생성
 
 	//센터 영역
@@ -57,27 +64,38 @@ public class AppMain extends JFrame implements ActionListener{
 	Page[] pages = new Page[4];
 	Color c = new Color(34, 45, 50);
 	
+	
+	//채팅관련
+	public ChatSelect chatSelect;
+	public ChatClient chatClient;
+	ChatServer chatServer;
+	String msg;
+	
+	
 	//서버관련
-	private Member member;
-	ServerSocket server;
-	Thread serverThread;
-	Thread chatThread;
+	Socket socket;
+	Member member;
+	ClientMsgThread msgThread;
+	BufferedReader buffr;
+	BufferedWriter buffw;
+	Vector<Member> memberList;
+
+	
 	private MemberMain memberMain;
-	private Vector<ServerMsgThread> clientList = new Vector<ServerMsgThread>();
 	boolean serverFlag = true;
 
 	public AppMain(Member member, MemberMain memberMain) {
-		System.out.println(member);
+//		System.out.println("앱메인에 온 리스트 사이즈는"+chatServer.getClientList().size());
 		this.member=member;
-		System.out.println(memberMain);
 		this.memberMain = memberMain;
-		
 		//생성
 		p_west = new JPanel();
 		p_profile = new JPanel();
 		p_img = new JPanel();
-		la_name = new JLabel(getMember().getUser_name(),SwingConstants.CENTER);
+		la_name = new JLabel(member.getUser_name()+"님",SwingConstants.CENTER);
 		la_dept = new JLabel("A사업팀",SwingConstants.CENTER);
+		hu = new HumanImg(Color.WHITE, 60, 60,  new ImageIcon(getIcon("Human.png")).getImage());
+
 		
 		for(int i=0;i< menu_title.length;i++) {
 			bt_menu[i] = new CustomButton(menu_title[i]);
@@ -101,7 +119,7 @@ public class AppMain extends JFrame implements ActionListener{
 		//페이지들 생성
 		p_center = new JPanel();
 		
-		pages[0] = new HomeMain(this); //메인홈
+		pages[0] = new HomeMain(this,memberMain); //메인홈
 		pages[1] = new ListMain(this,memberMain);//게시판 리스트
 		pages[2] = new CalendarMain(this);//나의일정
 		pages[3] = new CloudMain(this);//클라우드
@@ -141,6 +159,7 @@ public class AppMain extends JFrame implements ActionListener{
 		bt_config.setFont(new Font("맑은 고딕", Font.BOLD, 12));
 		
 		//조립
+		p_img.add(hu);
 		p_profile.add(p_img);
 		p_profile.add(la_name);
 		p_profile.add(la_dept);
@@ -165,66 +184,103 @@ public class AppMain extends JFrame implements ActionListener{
 			bt_menu[i].addActionListener(this);
 		}
 		
+		bt_chat.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				chatSelect.setVisible(true);
+			}
+		});
 		
-		//서버 가동
-			serverThread = new Thread() {
-				public void run() {
-					runServer();
-				}
-			};
-			serverThread.start();
 			
+		this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				msgThread.flag = false; // 쓰레드 소멸
+				System.exit(0); // Process kill
+			}
+		});
 			
-			this.addWindowListener(new WindowAdapter() {
-				public void windowClosing(WindowEvent e) {
-					serverFlag = false; // 쓰레드 소멸
-					System.exit(0); // Process kill
-				}
-			});
-			bt_chat.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					chatThread = new Thread() {
-						public void run() {
-							runChat();
-						}
-					};
-					chatThread.start();
-				}
-			});
-		
-			addWindowListener(new WindowAdapter() {
-				public void windowClosing(WindowEvent e) {
-					getMemberMain().disConnect(); //DB 접속해제
-					System.exit(0); //kill process
-				}
-			});
-		
-		
 		
 		//보여주기
 		setBounds(400, 100, 1200, 720);
 		setVisible(true);
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		
+		chatready();
+		
+		connect(); //서버와 연결!!!
+		sendAllData(); // 클라이언트 서버에 정보 전달
+		
 	}
 	
-	public void runServer() {
-		int port = 7777;
+
+
+	public void savemain(Vector<Member> memberList) {
+		this.memberList = memberList;
+	}
+
+
+
+
+	public void chatready() {
+		chatSelect = new ChatSelect(this);
+		chatClient = new ChatClient(this);
+	}
+	
+	
+	
+	public void connect() {//서버와 연결!!!
+		String ip="192.168.219.106";
+		int port=7777;
+		
 		try {
-			server = new ServerSocket(port);
-			this.setTitle("서버준비 완료");
-			while (serverFlag) {
-				Socket socket = server.accept();
-				System.out.println("누군가 접속시도");
-				ServerMsgThread smt = new ServerMsgThread( socket , this);
-				smt.start(); 
-				getClientList().add(smt); 
-				System.out.println("접속자 수는= "+getClientList().size());
-			}
+			socket = new Socket(ip, port); //접속!!!!!!!
+			msgThread = new ClientMsgThread(socket, this);//클라이언트 측의 대화용 쓰레드 생성
+			msgThread.start(); // 스레드 run() 실행! 서버의 메시지 실시간 청취 시작
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
+	
 
+
+	public void sendAllData() {
+		//로그인 폼에서 데이터를 넣은 member값을 sb에 스트링으로 넣어전달서버측에 전달 
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		sb.append("\"cmd\" : \"login\",");  //cmd 요청명령을 구분하는 값!!
+		sb.append("\"member\":{");
+		sb.append("\"member_id\" :  \""+member.getMember_id()+"\",");
+		sb.append("\"user_name\" :\""+member.getUser_name()+"\",");
+		sb.append("\"user_id\" :  \""+member.getUser_id()+"\",");
+		sb.append("\"user_pass\" :  \""+member.getUser_pass()+"\",");
+		sb.append("\"regdate\" :  \""+member.getRegdate()+"\",");
+		sb.append("\"img\" :  \""+member.getImg()+"\"");
+		sb.append("}");
+		sb.append("}");
+		
+		
+		//서버에 메시지 전송 
+		msgThread.send(sb.toString());
+	}
+	
+	// 메세지전송메서드
+	public void sendMsg(String msg) {
+		this.msg=msg;
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		sb.append("\"cmd\":\"chat\", ");
+		sb.append("\"user_name\": \""+member.getUser_name()+"\"");
+		sb.append("\"message\": \""+msg+"\"");
+		sb.append("}");
+		
+		
+		msgThread.send(sb.toString());
+		
+	}
+	
+
+	
 	public void actionPerformed(ActionEvent e) {
 		//어떤 버튼이 눌렸는지? - 이벤트가 연결된 컴포넌트를 가리켜 이벤트 소스 
 		Object obj = e.getSource();
@@ -234,10 +290,6 @@ public class AppMain extends JFrame implements ActionListener{
 		showHide(bt.getId());
 	}
 	
-	public void runChat() {
-		new ChatClient(AppMain.this);
-	}
-	
 	public Member getMember() {
 		return member;
 	}
@@ -245,13 +297,10 @@ public class AppMain extends JFrame implements ActionListener{
 	public MemberMain getMemberMain() {
 		return memberMain;
 	}
-
-	public Vector<ServerMsgThread> getClientList() {
-		return clientList;
-	}
-
-	public void setClientList(Vector<ServerMsgThread> clientList) {
-		this.clientList = clientList;
+	public Image getIcon(String filename) {
+		URL url = this.getClass().getClassLoader().getResource(filename);
+		ImageIcon icon=new ImageIcon(url);
+		return icon.getImage();
 	}
 	
 	public void showHide(int n) { //보여주고 싶은 페이지의 번호를 넘기면 된다..

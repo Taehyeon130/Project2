@@ -1,6 +1,7 @@
 package com.workin.calendar;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -12,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -36,6 +38,7 @@ public class DetailForm extends JDialog{
 	JPanel p_whole; //전체를 담을 패널
 	
 	JPanel p_north1; //제목 올라올 패널
+	JLabel l_title;
 	JTextField f_title; //제목
 	
 	JPanel p_north2; //시간 올라올 패널
@@ -60,7 +63,8 @@ public class DetailForm extends JDialog{
 	String user = "root";
 	String password = "1234";
 	Connection con;
-	
+	CalendarMain calendarmain;
+	AppMain appMain;
 	String choose=null;
 	int year=0;
 	int month=0;
@@ -68,7 +72,8 @@ public class DetailForm extends JDialog{
 	
 	public DetailForm(JFrame frame, String day,int year, int month,AppMain appMain,CalendarMain calendarMain) {
 		super(frame);
-		
+		this.calendarmain = calendarMain;
+		this.appMain = appMain;
 		conn();
 		try{ //룩앤필이용해서 UI깔끔하게 
 			UIManager.setLookAndFeel ("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");//LookAndFeel Windows 스타일 적용
@@ -81,6 +86,7 @@ public class DetailForm extends JDialog{
 		p_whole = new JPanel();
 		
 		p_north1 = new JPanel();
+		l_title = new JLabel("제목");
 		f_title = new JTextField();
 		
 		p_north2 = new JPanel();
@@ -93,7 +99,7 @@ public class DetailForm extends JDialog{
 		f_time2 = new JTextField();
 		
 		p_center = new JPanel();
-		content = new JTextArea(18,50);
+		content = new JTextArea(20,52);
 		
 		p_south = new JPanel();
 		bt_modify = new JButton("수정");
@@ -102,18 +108,45 @@ public class DetailForm extends JDialog{
 		
 		//스타일
 		p_whole.setLayout(new GridLayout(2,1));
-		f_title.setPreferredSize(new Dimension(350,30));
+		f_title.setPreferredSize(new Dimension(320,30));
+		l_title.setPreferredSize(new Dimension(80,30));
+		l_title.setOpaque(true);
+		l_title.setBackground(Color.DARK_GRAY);
+		l_title.setForeground(Color.white);
+		l_title.setFont(new Font("맑은 고딕", Font.BOLD, 13));
+		content.setBorder(BorderFactory.createLineBorder(Color.black));
 		com_time.setPreferredSize(new Dimension(50,30));
 		f_time2.setPreferredSize(new Dimension(50,30));
 		f_year.setPreferredSize(new Dimension(40,30));
 		f_month.setPreferredSize(new Dimension(40,30));
 		f_date.setPreferredSize(new Dimension(40,30));
-		l_time.setFont(new Font("Arial-Black", Font.BOLD, 15));
-		l_date.setFont(new Font("Arial-Black", Font.BOLD, 15));
+		l_date.setPreferredSize(new Dimension(80,30));
+		l_time.setPreferredSize(new Dimension(80,30));
+		l_date.setOpaque(true);
+		l_time.setOpaque(true);
+		l_date.setBackground(Color.DARK_GRAY);
+		l_time.setBackground(Color.DARK_GRAY);
+		l_date.setForeground(Color.white);
+		l_time.setForeground(Color.white);
+		l_time.setFont(new Font("맑은 고딕", Font.BOLD, 13));
+		l_date.setFont(new Font("맑은 고딕", Font.BOLD, 13));
 		//combolist();
+//		p_whole.setPreferredSize(new Dimension(10,10));
+//		p_north1.setPreferredSize(new Dimension(10,10));
+//		p_north2.setPreferredSize(new Dimension(10,10));
+		p_north1.setOpaque(true);
+		p_north1.setBackground(Color.white);
+		p_north2.setOpaque(true);
+		p_north2.setBackground(Color.white);
+		p_center.setOpaque(true);
+		p_center.setBackground(Color.white);
+		p_south.setOpaque(true);
+		p_south.setBackground(Color.white);
+		
 		
 		
 		//조립
+		p_north1.add(l_title);
 		p_north1.add(f_title);
 		p_north2.add(l_date);
 		p_north2.add(f_year);
@@ -200,7 +233,7 @@ public class DetailForm extends JDialog{
 		ResultSet rs= null;
 		
 		String sql = "select * from calendar where year="+this.year+" and month = "+(this.month+1)+" and date="+date;
-		//System.out.println(sql);
+
 		try {
 			pstmt = con.prepareStatement(sql);
 			rs = pstmt.executeQuery();
@@ -213,7 +246,7 @@ public class DetailForm extends JDialog{
 				 contents = rs.getString("cal_content");	
 				 cal_date = rs.getString("cal_date");
 				 cal_time = rs.getString("cal_time");
-				// System.out.println("제목 : "+title + "년도" + year+"월"+month+"일"+date+"내용"+contents+"언제"+cal_date+"몇시"+cal_time);
+
 				 f_title.setText(title);
 				 f_year.setText(Integer.toString(year));
 				 f_month.setText(Integer.toString(month));
@@ -265,20 +298,6 @@ public class DetailForm extends JDialog{
 		try {
 				pstmt = con.prepareStatement(sql);
 				rs = pstmt.executeQuery();
-		
-//				while(rs.next()) {
-//						ctitle = rs.getString("cal_title");
-//						ctime = rs.getInt("cal_time");
-//						ccontent = rs.getString("cal_content");
-//					}
-//				System.out.println("ctitle"+ctitle+", title"+title);
-//				System.out.println("sql : "+sql);
-				
-			
-				//System.out.println("주목!!!!");
-				//System.out.println("year"+year +"this.year" +this.year); 
-			//	System.out.println("month"+month +"this.m" +this.month); 
-				//System.out.println("date"+date +"this.d" +this.choose); 
 				
 				if(rs.isBeforeFirst()) { //조회된 데이터가 없으면 false 있으면 true - 데이터가 있을 때 실행됨
 					if(year == this.year && month == (this.month+1) && date == Integer.parseInt(this.choose)) {
@@ -294,6 +313,12 @@ public class DetailForm extends JDialog{
 		}finally {
 			release(pstmt, rs);
 		}
+		calendarmain.removeDate(); //날짜 패널 삭제
+		calendarmain.createDate(appMain); //날짜 패널 생성
+		calendarmain.removeString();//기존 날짜 지우기
+		calendarmain.setDateTitle(); //달력 제목 바꾸기 
+		calendarmain.printDate(); //날짜 출력하기	
+		calendarmain.registDate(appMain); //일정 추가하기	
 
 		this.setVisible(false);
 		
@@ -335,6 +360,12 @@ public class DetailForm extends JDialog{
 				e.printStackTrace();
 			}
 		}
+		calendarmain.removeDate(); //날짜 패널 삭제
+		calendarmain.createDate(appMain); //날짜 패널 생성
+		calendarmain.removeString();//기존 날짜 지우기
+		calendarmain.setDateTitle(); //달력 제목 바꾸기 
+		calendarmain.printDate(); //날짜 출력하기	
+		calendarmain.registDate(appMain); //일정 추가하기	
 		JOptionPane.showMessageDialog(this, "수정 완료");
 	}
 	
@@ -369,6 +400,12 @@ public class DetailForm extends JDialog{
 				e.printStackTrace();
 			}
 		}
+		calendarmain.removeDate(); //날짜 패널 삭제
+		calendarmain.createDate(appMain); //날짜 패널 생성
+		calendarmain.removeString();//기존 날짜 지우기
+		calendarmain.setDateTitle(); //달력 제목 바꾸기 
+		calendarmain.printDate(); //날짜 출력하기	
+		calendarmain.registDate(appMain); //일정 추가하기	
 	}
 	
 	public void Check(AppMain appMain) {

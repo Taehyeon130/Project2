@@ -182,9 +182,7 @@ public class CalendarMain extends Page{
 				registDate(appMain);
 			}
 		});
-					
-		//System.out.println("캘린더에서 회원값"+appMain.getMember().getUser_name());
-		
+
 	}
 	
 	// DB연결
@@ -243,25 +241,23 @@ public class CalendarMain extends Page{
 	public void createDate(AppMain appMain) {
 		int yy = currentDate.get(Calendar.YEAR);
 		int mm = currentDate.get(Calendar.MONTH);
-		//int dd = currentDate.get(Calendar.DATE);
 		int firstday = getFirstDayOfMonth(yy, mm);
 		DateBox dateBox;
 
 		for(int i=0;i<dayArray.length*6;i++) {
 			if(i<firstday|| i-(firstday-1)>getLastDate(yy, (mm+1))) { 
-				dateBox = new DateBox("", new Color(255,0,0,0), 130,79,Color.black,yy,mm,"","","",category,new Color(255,0,0,0)); //일 수 외에는 투명하게 배경 처리하기
+				dateBox = new DateBox("", new Color(255,0,0,0), 130,79,Color.black,yy,mm,"","","",category,new Color(255,0,0,0),this); //일 수 외에는 투명하게 배경 처리하기
 			}else if(yy==yy_t&&mm==mm_t&&i==dd_t+1) { //오늘 표시
-				dateBox = new DateBox("", Color.pink, 130,79,Color.black,yy,mm,"","","",category,new Color(255,0,0,0));
-				dateBox.click(appMain);
-				
+				dateBox = new DateBox("", Color.pink, 130,79,Color.black,yy,mm,"","","",category,new Color(255,0,0,0),this);
+				dateBox.click(appMain);	
 			}else if(i==0 || i==7 || i==14 || i==21 || i==28){
-				dateBox = new DateBox("", Color.white, 130,79,Color.red,yy,mm,"","","",category,new Color(255,0,0,0));		
+				dateBox = new DateBox("", Color.white, 130,79,Color.red,yy,mm,"","","",category,new Color(255,0,0,0),this);		
 				dateBox.click(appMain);
 			}else if(i==6 || i==13 || i==20 || i==27){
-				dateBox = new DateBox("", Color.white, 130,79,Color.blue,yy,mm,"","","",category,new Color(255,0,0,0));
+				dateBox = new DateBox("", Color.white, 130,79,Color.blue,yy,mm,"","","",category,new Color(255,0,0,0),this);
 				dateBox.click(appMain);
 			}else {
-				dateBox = new DateBox("", Color.white, 130,79,Color.black,yy,mm,"","","",category,new Color(255,0,0,0));
+				dateBox = new DateBox("", Color.white, 130,79,Color.black,yy,mm,"","","",category,new Color(255,0,0,0),this);
 				dateBox.click(appMain);	
 			}
 			p_center.add(dateBox);
@@ -332,7 +328,7 @@ public class CalendarMain extends Page{
 	//이전월 구하기
 	public void prevMonth() {
 		int yy = currentDate.get(Calendar.YEAR);
-	int mm = currentDate.get(Calendar.MONTH);
+		int mm = currentDate.get(Calendar.MONTH);
 		//현재 날짜 객체에 월을+1한다, 기왕이면 날짜는 1일로...
 		currentDate.set(yy, mm-1,1); //yy, mm, dd
 
@@ -373,10 +369,8 @@ public class CalendarMain extends Page{
 	}
 	
 	//입력한 곳의 날짜 
-	public void registDate(AppMain appMain) {
-		
+	public void registDate(AppMain appMain) {	
 		int member_id = appMain.getMember().getMember_id();
-		String slq = "select * from calendar where member_id="+member_id;
 		int yy = currentDate.get(Calendar.YEAR);
 		int mm = currentDate.get(Calendar.MONTH);
 		int dd = getFirstDayOfMonth(yy, mm);
@@ -388,6 +382,8 @@ public class CalendarMain extends Page{
 		ResultSet rs=null; 
 		ResultSet rs2=null; 
 		String date =null;
+
+		String slq = "select * from calendar where member_id="+member_id;
 		
 		try {
 			pstmt = con.prepareStatement(slq);
@@ -407,9 +403,6 @@ public class CalendarMain extends Page{
 				while(rs2.next()) {
 					cate = rs2.getString("cal_name");					
 				}
-				
-				//System.out.println(year+"년"+month+"월"+date+"일"+"에 값이 저장되어 있음");
-				//System.out.println(Integer.parseInt(date)+(dd-1)+"번째임");
 				if(year==yy && month ==(mm+1)) {
 					for(int i=0;i<boxArray.length;i++) {
 						if(category ==1) {
@@ -419,6 +412,7 @@ public class CalendarMain extends Page{
 							boxArray[Integer.parseInt(date)+(dd-1)].cal_time=cal_time;
 							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
 							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+							boxArray[Integer.parseInt(date)+(dd-1)].repaint();
 						}else if(category==2) {
 							boxArray[Integer.parseInt(date)+(dd-1)].cc = new Color(128,128,0);
 							boxArray[Integer.parseInt(date)+(dd-1)].title=cate;
@@ -426,6 +420,7 @@ public class CalendarMain extends Page{
 							boxArray[Integer.parseInt(date)+(dd-1)].cal_time=cal_time;
 							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
 							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+							boxArray[Integer.parseInt(date)+(dd-1)].repaint();
 						}else if(category==3) {
 							boxArray[Integer.parseInt(date)+(dd-1)].cc = new Color(255,127,0);
 							boxArray[Integer.parseInt(date)+(dd-1)].title=cate;
@@ -433,6 +428,7 @@ public class CalendarMain extends Page{
 							boxArray[Integer.parseInt(date)+(dd-1)].cal_time=cal_time;
 							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
 							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+							boxArray[Integer.parseInt(date)+(dd-1)].repaint();
 						}else if(category==4) {
 							boxArray[Integer.parseInt(date)+(dd-1)].cc = new Color(97,219,240);
 							boxArray[Integer.parseInt(date)+(dd-1)].title=cate;
@@ -440,11 +436,14 @@ public class CalendarMain extends Page{
 							boxArray[Integer.parseInt(date)+(dd-1)].cal_time=cal_time;
 							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
 							boxArray[Integer.parseInt(date)+(dd-1)].cate=category;	
+							boxArray[Integer.parseInt(date)+(dd-1)].repaint();
 						}else {
 							boxArray[Integer.parseInt(date)+(dd-1)].cc = new Color(255,0,0,0);
+							boxArray[Integer.parseInt(date)+(dd-1)].repaint();
 						}
 						
 					}
+					
 				}
 			}
 		} catch (SQLException e) {

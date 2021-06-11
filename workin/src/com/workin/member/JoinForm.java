@@ -15,8 +15,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 
 
 public class JoinForm extends PageControl{
@@ -35,14 +33,6 @@ public class JoinForm extends PageControl{
 	
 	public JoinForm(MemberMain memberMain) {
 		super(memberMain);
-		
-		//룩앤필이용해서 UI깔끔하게 
-		try{
-			UIManager.setLookAndFeel ("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");//LookAndFeel Windows 스타일 적용
-			SwingUtilities.updateComponentTreeUI(this) ;
-		}catch(Exception e){
-			JOptionPane.showMessageDialog(this, e);
-		}
 		
 		//생성
 		la_join = new JLabel("회원가입",SwingConstants.CENTER);
@@ -122,14 +112,17 @@ public class JoinForm extends PageControl{
 		}
 	}
 	
-	public void joinCheck() {
+public void joinCheck() {
+		
 		if(t_name.getText().equals("")) {
 			JOptionPane.showMessageDialog(this,"이름을 입력하세요");
 		}else if(t_id.getText().equals("")){
 			JOptionPane.showMessageDialog(this,"아이디를 입력하세요");			
 		}else if(t_pass.getText().equals("")){
 			JOptionPane.showMessageDialog(this,"비밀번호를 입력하세요");			
-		}else if(t_pass.getText() != t_passCheck.getText()){
+		}else if(!(t_pass.getText().trim().equals(t_passCheck.getText().trim()))){
+			System.out.println(t_pass.getText().trim());
+			System.out.println(t_passCheck.getText().trim());
 			JOptionPane.showMessageDialog(this,"비밀번호를 확인해주세요");			
 		}else {
 			regist();
