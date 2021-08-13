@@ -50,4 +50,4 @@ Workin은 회사에서 사용하는 프로그램으로 사용자가 자신의 �
 
 ![image](https://user-images.githubusercontent.com/75840459/129297698-02f6cec7-19e0-4af1-9709-5d9920e167a0.png)
 
-
+![image](https://user-images.githubusercontent.com/75840459/129298472-26042dbd-4c14-4b10-8c36-cc86e8adaa0b.png)
