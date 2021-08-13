@@ -41,3 +41,11 @@ Workin은 회사에서 사용하는 프로그램으로 사용자가 자신의 �
 
 <br>
 4) 일정 상세보기
+
+![image](https://user-images.githubusercontent.com/75840459/129296587-37a8cb95-c5d9-4e63-b79e-5c735a14b85a.png)
+- 일정을 선택하면 상세보기 화면이 팝업으로 나타남
+<br>
+
+5) 일정 수정하기
+
+
